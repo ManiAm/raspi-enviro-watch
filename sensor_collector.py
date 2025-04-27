@@ -128,9 +128,10 @@ async def scan():
     try:
         while True:
             await asyncio.sleep(5)
-    except KeyboardInterrupt:
+    except (asyncio.CancelledError, KeyboardInterrupt):
+        print("\nScan stopped. Cleaning up BLE scanner...")
+    finally:
         await scanner.stop()
-        print("\nStopped scanning.")
 
 
 def register_callback(callback):

@@ -359,10 +359,10 @@ Once the custom firmware has been successfully flashed to the BLE device, you ca
 
 Installing the custom firmware on the LYWSD03MMC enables passive data collection by broadcasting sensor readings over BLE advertisements without requiring an active connection. This reduces power consumption and simplifies data retrieval, as devices can simply listen for advertisement packets to collect temperature, humidity, battery level, and voltage information. The data is broadcast using the Environmental Sensing UUID (0x181A) in a custom format, allowing for easy decoding.
 
-Furthermore, since no BLE connection or pairing is necessary, multiple sensors can be monitored simultaneously with minimal system resources, making this method ideal for scalable, low-power sensor networks and continuous home environment monitoring. The `sensor_passive_collector.py` script passively listens for BLE advertisement packets from the sensor, decodes the broadcasted data fields, and displays the parsed measurements.
+Furthermore, since no BLE connection or pairing is necessary, multiple sensors can be monitored simultaneously with minimal system resources, making this method ideal for scalable, low-power sensor networks and continuous home environment monitoring. The `sensor_collector.py` script passively listens for BLE advertisement packets from the sensor, decodes the broadcasted data fields, and displays the parsed measurements.
 
 ```bash
-python3 sensor_passive_collector.py
+python3 sensor_collector.py
 ```
 
 ```text
