@@ -7,7 +7,8 @@ import asyncio
 from bleak import BleakScanner
 from datetime import datetime
 
-sensor_list = [
+# add your sensor information here
+sensors_list = [
     {
         "name": "sensor1",
         "location": "bedroom",
@@ -16,20 +17,21 @@ sensor_list = [
     {
         "name": "sensor2",
         "location": "outside",
-        "mac_address": "A4:C1:38:AA:EA:1D"
+        "mac_address": "A4:C1:38:67:54:2B"
     }
 ]
 
-sensor_dict = {
-    sensor["mac_address"]: sensor for sensor in sensor_list
+sensors_dict = {
+    sensor["mac_address"]: sensor for sensor in sensors_list
 }
 
-TARGET_MACS = set(sensor_dict.keys())
+sensors_mac_address = set(sensors_dict.keys())
 
-# Environmental Sensing
+# Environmental Sensing UUID
 UUID_ENV_SENSING = "0000181a-0000-1000-8000-00805f9b34fb"
 
 _data_callbacks = []
+frame_count_dict = {}
 
 
 def parse_custom_payload(data, advertisement_data):
@@ -39,6 +41,8 @@ def parse_custom_payload(data, advertisement_data):
 
     if len(data) < 13:
         return None  # Payload too short to parse
+
+    ts = datetime.now()
 
     try:
 
@@ -57,18 +61,39 @@ def parse_custom_payload(data, advertisement_data):
         if distance:
             distance = round(distance, 2)
 
+        measured_interval = 0
+        last_frame_data = frame_count_dict.get(mac, None)
+        if last_frame_data:
+            last_ts = last_frame_data["ts"]
+            last_frame_counter = last_frame_data["frame_counter"]
+            measured_interval = last_frame_data["measured_interval"]
+            if last_frame_counter != frame_counter:
+                measured_interval = (ts - last_ts).total_seconds()
+                frame_count_dict[mac] = {
+                    "ts": ts,
+                    "frame_counter": frame_counter,
+                    "measured_interval": measured_interval
+                }
+        else:
+            frame_count_dict[mac] = {
+                "ts": ts,
+                "frame_counter": frame_counter,
+                "measured_interval": measured_interval
+            }
+
         entry = {
-            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Temperature": round(temp, 2),
-            "Humidity (%)": humidity,
-            "Battery Level (%)": battery,
-            "Battery Voltage (V)": round(voltage, 3),
-            "Frame Counter": frame_counter,
-            "RSSI": rssi,
-            "Distance (m)": distance
+            "timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"),
+            "temperature": round(temp, 2), # C or F depending on firmware config
+            "humidity": humidity,     # percent
+            "battery_level": battery, # percent
+            "battery_voltage": round(voltage, 3), # volt
+            "frame_counter": frame_counter,
+            "rssi": rssi,
+            "distance": distance, # meter
+            "measurement_interval": round(measured_interval, 2) # second
         }
 
-        sensor_entry = sensor_dict.get(mac, {})
+        sensor_entry = sensors_dict.get(mac, {})
         entry.update(sensor_entry)
 
         return entry
@@ -103,7 +128,7 @@ async def scan():
 
     def detection_callback(device, advertisement_data):
 
-        if device.address.upper() not in TARGET_MACS:
+        if device.address.upper() not in sensors_mac_address:
             return  # Ignore other devices
 
         service_data = advertisement_data.service_data

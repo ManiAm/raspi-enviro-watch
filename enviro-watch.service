@@ -1,0 +1,13 @@
+[Unit]
+Description=Enviro-Watch service
+After=network.target
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/opt/rp_cluster/raspi-enviro-watch
+ExecStart=/home/admin/enviroWatch/bin/python sensor_collect_forward.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -7,16 +7,17 @@ Designed for reliability and efficiency, Raspi-Enviro-Watch enables seamless dat
 
 ## Wireless Sensors
 
-There are several wireless temperature and humidity sensors that can report data to a Raspberry Pi 5, using protocols like Wi-Fi, Bluetooth, or LoRa.
+There are several wireless temperature and humidity sensors that can report data to a Raspberry Pi 5, using protocols like Bluetooth, Wi-Fi, Zigbee or LoRa.
 
 | Sensor Type                  | Protocol  | Battery Powered | Notes                                                           |
 |------------------------------|-----------|-----------------|-----------------------------------------------------------------|
 | Xiaomi Mijia LYWSD03MMC      | Bluetooth | Yes (CR2032)    | Hackable firmware available; widely used; inexpensive (~$10)    |
 | Inkbird IBS-TH1 Mini         | Bluetooth | Yes             | Good range, supported by python-inkbird                         |
 | RuuviTag                     | Bluetooth | Yes             | High precision; rugged design; supports logging                 |
-| Sonoff SNZB-02               | Zigbee    | Yes             | Needs Zigbee2MQTT + USB coordinator                             |
-| Shelly H&T                   | Wi-Fi     | Yes (AAA)       | Easy integration; standalone device with web server             |
 | SwitchBot Meter/Meter Plus   | Bluetooth | Yes             | Can work with or without SwitchBot hub                          |
+| Shelly H&T                   | Wi-Fi     | Yes (AAA)       | Easy integration; standalone device with web server             |
+| Sonoff SNZB-02               | Zigbee    | Yes             | Needs Zigbee2MQTT + USB coordinator                             |
+| Dragino LHT65                | LoRaWAN   | Yes (Li-SOCl2)  | Requires LoRaWAN gateway; ultra-long range, low data rates      |
 
 I decided to go with Xiaomi Mijia Thermometer 2!
 
@@ -307,7 +308,7 @@ python3 token_extractor.py
 
 ```text
 ---------
-NAME:     Temperature & humidity sensor
+NAME:     bedroom
 ID:       blt.2.1l5u9vpgpo800
 BLE KEY:  4884d1f7e3e907e7f0dce492f61c836e
 MAC:      A4:C1:38:AA:EA:0D
@@ -315,6 +316,15 @@ IP:       76.14.48.209
 TOKEN:    dbcb2c43d519b1f1a2e73b5a
 MODEL:    miaomiaoce.sensor_ht.t2
 ---------
+NAME:     outside
+ID:       blt.2.1l6ac5vspo800
+BLE KEY:  591f8a6e4e6cf453188ae1eabf16c636
+MAC:      A4:C1:38:67:54:2B
+TOKEN:    6780ca57ec09f49aaeeb50d1
+MODEL:    miaomiaoce.sensor_ht.t2
+---------
+
+
 ```
 
 The python script securely connects to your Xiaomi account and extracts the `token` and `ble key` associated with your devices. The key is essential for enabling secure BLE communication outside of the Xiaomi ecosystem, such as when connecting via custom scripts or home automation platforms.
@@ -344,8 +354,8 @@ There are two primary methods to flash the ATC_MiThermometer custom firmware ont
 
 - Over-the-Air (OTA):
 
-    - Obtain device id, token, and BLE key using [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor) described [here](#ble-key).
-    - Open the [TelinkFlasher](https://atc1441.github.io/TelinkFlasher.html) in a browser such as Chrome.
+    - Firmware 2.1.1_0159 requires registration in `Xiaomi Home` app and obtaining IDs. You can obtain device id, token, and BLE key using [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor) described in [here](#ble-key).
+    - Next, open the [TelinkFlasher](https://atc1441.github.io/TelinkFlasher.html) in a browser such as Chrome.
     - Enable experimental web platform features in your browser (ex. chrome://flags/#enable-experimental-web-platform-features)
     - Click on "Connect" to connect to the Xiaomi thermometer; note that discovery may take some time due to the device's low advertising frequency.
     - Copy and paste device id, token, and BLE key in the form.
@@ -367,7 +377,7 @@ The ATC_MiThermometer custom firmware allows real-time configuration changes dir
 
 - Advertising Type: Select how data is advertised over BLE. Custom format (default) or Mi-Like format (compatible with Xiaomi apps).
 
-- Advertising Interval: Set how often updated sensor values are broadcasted over BLE (default is 60 seconds).
+- New Measurement Interval: Set how often updated sensor values are broadcasted over BLE (default is 60 seconds).
 
 - Temperature Unit Selection: Choose between °C (Celsius) and °F (Fahrenheit) for display. Default is Celsius.
 
@@ -382,6 +392,8 @@ The ATC_MiThermometer custom firmware allows real-time configuration changes dir
 
 - Smiley Face Display Behavior: Control the smiley icon shown on the screen.
 
+Once you finish changing configurations, click on "Save current settings in flash" to make them permanent.
+
 ### BLE Passive Data Collection
 
 Installing the custom firmware on the LYWSD03MMC enables passive data collection by broadcasting sensor readings over BLE advertisements without requiring an active connection. This reduces power consumption and simplifies data retrieval, as devices can simply listen for advertisement packets to collect temperature, humidity, battery level, and voltage information. The data is broadcast using the Environmental Sensing UUID (0x181A) in a custom format, allowing for easy decoding.
@@ -394,18 +406,23 @@ python3 sensor_collector.py
 
 ```text
 [+] Received Data:
-      Timestamp: 2025-04-26 19:52:40
-      Temperature: 24.6
-      Humidity (%): 43
-      Battery Level (%): 82
-      Battery Voltage (V): 2.953
-      Frame Counter: 232
-      RSSI: -50
-      Distance (m): 0.19
+      timestamp: 2025-04-27 20:59:44
+      temperature: 72.1
+      humidity: 47
+      battery_level: 90
+      battery_voltage: 3.012
+      frame_counter: 157
+      rssi: -72
+      distance: 4.29
+      measurement_interval: 52.99
       name: sensor1
       location: bedroom
       mac_address: A4:C1:38:AA:EA:0D
 ```
+
+Note that the sensor data + frame counter inside the BLE advertisement is updated once per minute. However, BLE advertising happens much more often than every minute. In other words, between each "real" update, the sensor repeatedly advertises the same data (same frame counter, same temperature/humidity/battery) to maximize the chance that a nearby passive receiver hears it. It is important to implement a deduplication strategy to avoid saving or transmitting identical data multiple times.
+
+## Collector Setup
 
 When you have multiple sensor devices sending BLE advertisements, the overall goal is to:
 
@@ -416,7 +433,7 @@ When you have multiple sensor devices sending BLE advertisements, the overall go
 
 Depending on the number of devices and physical deployment area, you need to carefully plan your collector architecture: single vs multiple collector setup.
 
-## Single Collector Setup
+### Single Collector Setup
 
 A single collector architecture for BLE sensor data collection is suitable for small-scale environments such as home labs or personal IoT setups. This model works best when you have 1 to 20 BLE sensors located reasonably close to the collector, typically within 10 to 15 meters. Actual distance may vary depending on environmental factors like walls, doors, or other physical obstacles, which can significantly impact BLE signal strength and reliability.
 
@@ -426,7 +443,7 @@ Storing locally means that the collector saves the decoded sensor data on its ow
 
 Forwarding the data, on the other hand, means that the collector acts more like a bridge: after decoding the sensor data, it sends it in near real-time to a remote destination. This could be a central database hosted elsewhere on your network, a cloud platform like `AWS` or `Azure`, a home server running `InfluxDB`, `PostgreSQL`, or `MongoDB`, or even a message broker such as `RabbitMQ`. Forwarding enables more scalable architectures where visualization, alerting, and data processing can happen elsewhere, reducing the load on the collector. It also improves resilience, since the collector doesn’t need to store large amounts of historical data locally.
 
-In many cases, a hybrid approach is ideal: the collector temporarily stores data locally (e.g., in case of network outages) and forwards it when the connection is available, ensuring robustness without sacrificing real-time capabilities.
+A hybrid approach is ideal: the collector temporarily stores data locally (e.g., in case of network outages) and forwards it when the connection is available, ensuring robustness without sacrificing real-time capabilities.
 
 #### Advantages
 
@@ -434,13 +451,45 @@ Single collector setup has several advantages. It is simple to set up and easy t
 
 #### Challenges
 
-Multiple challenges are associated with single collector setup. First and foremost, BLE signal range indoors is relatively short — typically 10 to 20 meters — and can be reduced further by physical barriers. This means that careful placement of the collector is critical to maintain reliable coverage. Another risk is that if the collector fails or goes offline, all data collection immediately stops, creating a single point of failure. Lastly, while a single collector can comfortably handle up to 20–30 devices in most cases, scaling beyond that may cause performance issues due to limitations in BLE scanning rates and advertisement collision handling. Careful testing and performance tuning would be necessary if you plan to grow the number of connected sensors.
+Multiple challenges are associated with single collector setup:
 
-## Multiple Collector Setup
+- Limited BLE Signal Range Indoors
 
-In medium to large environments — such as large homes, office buildings, university labs, or industrial spaces — a single BLE collector is often not enough to ensure reliable data collection. As the number of BLE sensors exceeds 20 devices and the physical layout becomes more spread out (multiple floors, long corridors, separate rooms or buildings), a multiple collectors setup becomes necessary. This architecture ensures that all sensors remain within effective BLE range of at least one collector, enabling robust and continuous data gathering across a large or complex area.
+  BLE signals typically have a relatively short effective range indoors — usually between 10 to 20 meters. Environmental factors such as walls, floors, furniture, and even household appliances can further attenuate the signal, causing packet loss or degraded data quality. As a result, careful and strategic placement of the single collector is essential to ensure consistent and reliable sensor communication across the intended coverage area.
 
-In this design, several collectors — typically Raspberry Pi nodes, small PCs, or embedded servers — are strategically deployed throughout the environment. Each collector listens for BLE advertisements within its local area, independently picking up broadcasts from nearby sensors. Rather than processing everything locally, collectors forward the collected data upstream to a central server, broker, or database for storage, visualization, and higher-level analytics. This approach centralizes the data management while distributing the BLE listening load across the network.
+- Single Point of Failure
+
+  In a single collector setup, the entire data acquisition process depends on the health and availability of one device. If the collector experiences a hardware failure, power loss, software crash, or network disconnection, all sensor data collection will immediately cease. This introduces a single point of failure into the system, which can result in data gaps, missed alerts, or prolonged downtime until the collector is restored.
+
+- Scalability and Performance Limitations
+
+  While a single collector can usually handle around 20 to 30 BLE devices under normal conditions, scaling beyond that threshold may lead to performance degradation. BLE scanning has inherent limitations in bandwidth and advertisement collision handling, which can cause delayed updates, missed packets, or increased CPU usage. As the number of sensors grows, careful performance tuning, optimization of scan parameters, and real-world testing become necessary to ensure the system remains responsive and reliable.
+
+- Duplicate Data
+
+  When passively listening for BLE advertisements using a single collector setup, it is normal to receive the same sensor broadcast multiple times within a short period. BLE devices continuously advertise the same data packet at regular intervals (typically every 1–2 seconds) to ensure reliable delivery in case receivers momentarily miss a transmission. To avoid redundant processing, the collector can implement deduplication logic.
+
+#### Deduplication Strategies
+
+In single collector BLE setups, while the risk of duplicate data is lower compared to multi-collector environments, it is still beneficial to implement basic deduplication techniques. This ensures that identical sensor readings are stored only once, keeping the database clean and efficient. Let us go over some of the key strategies:
+
+- By MAC Address + Timestamp
+
+    One of the simplest and most widely applicable deduplication methods is matching the MAC address and timestamp of incoming sensor data. If two received records have the same MAC address and a very close or identical timestamp, they likely represent the same reading. By comparing these attributes, the collector can identify and discard duplicates. This method is straightforward, efficient, and relies only on data that is already naturally available in the BLE payloads.
+
+- Use Hashing
+
+    Another strategy is to compute a hash based on key fields of each received advertisement, such as MAC address, temperature, humidity, battery level, and timestamp. By combining these fields into a unique string and calculating a simple hash (e.g., using SHA-256 or a lightweight checksum), you can quickly compare hashes of incoming data. If two records produce the same hash, they are assumed to be duplicates, and only one is retained. Hashing provides a flexible and scalable way to detect duplicates without comparing fields individually, making it particularly useful when dealing with large volumes of data or when records need to be processed at high speed.
+
+- By MAC Address + Frame Counter (Custom Firmware Only)
+
+    When using custom firmware that embeds a frame counter into the BLE advertisement payload, a more precise deduplication method becomes available. In this case, each broadcasted packet includes an incrementing frame counter alongside the MAC address. By comparing both the MAC address and the frame counter, the collector can reliably determine whether two received records are duplicates. If the frame counter and MAC match, the data is identical, and one copy can be safely discarded. This method is highly reliable because the frame counter provides an explicit mechanism to track updates. However, it is only applicable if the BLE device firmware supports including a frame counter in its advertisements — it is not available with standard factory firmware on most commercial sensors.
+
+### Multiple Collector Setup
+
+In medium to large environments — such as large homes, office buildings, university labs, or industrial spaces — a single BLE collector is not enough to ensure reliable data collection. As the number of BLE sensors exceeds 20 devices and the physical layout becomes more spread out (multiple floors, long corridors, separate rooms or buildings), a multiple collectors setup becomes necessary. This architecture ensures that all sensors remain within effective BLE range of at least one collector, enabling robust and continuous data gathering across a large or complex area.
+
+Several collectors — typically Raspberry Pi nodes, small PCs, or embedded servers — are strategically deployed throughout the environment. Each collector listens for BLE advertisements within its local area, independently picking up broadcasts from nearby sensors. Rather than processing everything locally, collectors forward the collected data upstream to a central server, broker, or database for storage, visualization, and higher-level analytics. This approach centralizes the data management while distributing the BLE listening load across the network.
 
 <img src="pics/multi-node.png" alt="segment" width="400">
 
@@ -452,43 +501,66 @@ The advantages of a multiple collector setup are significant. First, it dramatic
 
 Multiple collector setup introduces new challenges that must be carefully managed.
 
-- Clock synchronization
+- Clock Synchronization
 
     If collectors are operating independently, their timestamps must be tightly aligned to ensure that events across the network are correctly ordered. Using NTP (Network Time Protocol) to synchronize all collectors to a common time source is critical for maintaining accurate, meaningful historical data.
 
-- Duplicate data
+- Duplicate Data
 
-    When multiple collectors are within range of the same sensor, they may receive and forward the same advertisement. Without proper `deduplication` logic at the server side you risk storing identical readings multiple times, polluting your database and inflating storage costs. More on deduplication strategies later.
+    When multiple collectors are within range of the same sensor, they may receive and forward the same advertisement. Without proper deduplication logic at the server side you risk storing identical readings multiple times, polluting your database and inflating storage costs.
 
-- Data routing strategies
+- Data Routing Strategies
 
     Should each collector immediately forward every incoming packet to the central server, or should it batch readings together and send them periodically? Immediate forwarding enables near real-time monitoring but can flood the network with small packets. Batching reduces network traffic but introduces slight delays. Moreover, the design must account for failures of the central server: collectors should implement temporary buffering or retry mechanisms so that no data is lost if the upstream destination is temporarily unreachable.
 
-- Network traffic optimization
+- Network Traffic Optimization
 
     Forwarding every raw BLE packet creates overhead, especially as sensor density increases. Implementing some form of edge processing — for example, filtering, deduplication, or simple aggregation at the collector before sending data upstream — can significantly reduce bandwidth usage while preserving data integrity.
 
-#### Deduplication Strategies
-
-In multi-collector BLE setups, deduplication ensures that identical sensor readings captured by multiple collectors are stored only once. Collectors act as lightweight forwarders, simply relaying all received BLE data to a central server or database. The server then takes full responsibility for identifying and filtering out duplicates. Let us go over some of these techniques.
-
-- By MAC Address + Timestamp
-
-    One of the simplest and most effective deduplication strategies is based on matching the MAC address and timestamp of incoming sensor data. BLE advertisements often contain the latest battery, temperature, and humidity readings, broadcasted periodically. If two or more collectors capture the same broadcast, they will report identical data — same MAC address and same moment in time. By comparing incoming records at the server side, any readings that have the same MAC and timestamp (or even identical sensor values) can be identified as duplicates. One copy is kept and the others are discarded. This method is straightforward, efficient, and relies only on data that is already naturally available in the BLE payloads.
-
-- Use Hashing
-
-    Another strategy is to compute a hash based on key fields of each received advertisement, such as MAC address, temperature, humidity, battery level, and timestamp. By combining these fields into a unique string and calculating a simple hash (e.g., using SHA-256 or a lightweight checksum), you can quickly compare hashes of incoming data. If two records produce the same hash, they are assumed to be duplicates, and only one is retained. Hashing provides a flexible and scalable way to detect duplicates without comparing fields individually, making it particularly useful when dealing with large volumes of data or when records need to be processed at high speed.
-
 ## Home Network Deployment
 
-In my home network deployment, I am adopting the single collector setup approach. A dedicated Raspberry Pi node (`Ares`) acts as the central BLE data collector, passively listening for advertisements from all nearby LYWSD03MMC sensors. I currently have seven BLE sensors placed strategically throughout the house, including one located outside to monitor outdoor temperature and humidity conditions. Instead of storing the collected data locally, we forward the decoded data to an external InfluxDB database hosted on a different Raspberry Pi node (`Zeus`), within my cluster.
+In my home network, I am adopting the single collector setup approach. A dedicated Raspberry Pi node (`Ares`) acts as the central BLE data collector, passively listening for advertisements from all nearby LYWSD03MMC sensors. I currently have seven BLE sensors placed throughout the house, including one located outside to monitor outdoor temperature and humidity conditions. Instead of storing the collected data locally, I forward the decoded data to an external InfluxDB database hosted on a different Raspberry Pi node (`Zeus`), within my cluster.
 
 <img src="pics/home_design.png" alt="segment" width="450">
 
 This design separates the collection and storage responsibilities, ensuring that the collector remains lightweight and focused solely on BLE scanning and decoding, while Zeus handles storage, querying, and visualization workloads. The setup provides a simple, efficient, and scalable architecture that fits the needs of my home lab environment while following good distributed system practices.
 
 The implementation is provided in the `sensor_collect_forward.py` script. It builds upon the functionality of `sensor_collector.py`, but instead of printing the decoded sensor values to stdout, it forwards the data to a remote InfluxDB time-series database. The measurement is named `ble_sensor`, and metadata such as the collector's hostname, username, sensor name, sensor location, and sensor MAC address are included as `tags` to support efficient indexing and querying.
+
+<img src="pics/home_sensors.png" alt="segment" width="450">
+
+### Run as a systemd Service
+
+To run the project in the background and start it on system boot:
+
+1. Copy the service file:
+
+```bash
+sudo cp enviro-watch.service /etc/systemd/system/enviro-watch.service
+```
+
+2. Reload systemd and start the service:
+
+```bash
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl enable enviro-watch
+sudo systemctl start enviro-watch
+```
+
+3. Check status and logs:
+
+```bash
+sudo systemctl status enviro-watch
+```
+
+4. On service failure check the journal logs:
+
+```bash
+journalctl -u enviro-watch -n 50 --no-pager
+```
+
+Ensure that your virtual environment and script paths are correctly set in the service file.
 
 -----------------------
 
