@@ -5,15 +5,34 @@ Raspi-Enviro-Watch is a lightweight environmental monitoring project built aroun
 
 Designed for reliability and efficiency, Raspi-Enviro-Watch enables seamless data acquisition suitable for home automation, greenhouse monitoring, or general ambient condition tracking. The collected data is sent to InfluxDB time-series database to enable deeper insights, historical analysis and visualization.
 
-### Xiaomi Mijia Thermometer 2
+## Wireless Sensors
 
-​The Xiaomi Mijia Thermometer 2 (model LYWSD03MMC) is a compact and affordable sensor designed for monitoring environmental conditions. It uses Bluetooth Low Energy (BLE) connectivity to ensure low-energy wireless communication, suitable for continuous monitoring without significant battery drain.
+There are several wireless temperature and humidity sensors that can report data to a Raspberry Pi 5, using protocols like Wi-Fi, Bluetooth, or LoRa.
+
+| Sensor Type                  | Protocol  | Battery Powered | Notes                                                           |
+|------------------------------|-----------|-----------------|-----------------------------------------------------------------|
+| Xiaomi Mijia LYWSD03MMC      | Bluetooth | Yes (CR2032)    | Hackable firmware available; widely used; inexpensive (~$10)    |
+| Inkbird IBS-TH1 Mini         | Bluetooth | Yes             | Good range, supported by python-inkbird                         |
+| RuuviTag                     | Bluetooth | Yes             | High precision; rugged design; supports logging                 |
+| Sonoff SNZB-02               | Zigbee    | Yes             | Needs Zigbee2MQTT + USB coordinator                             |
+| Shelly H&T                   | Wi-Fi     | Yes (AAA)       | Easy integration; standalone device with web server             |
+| SwitchBot Meter/Meter Plus   | Bluetooth | Yes             | Can work with or without SwitchBot hub                          |
+
+I decided to go with Xiaomi Mijia Thermometer 2!
+
+## Xiaomi Mijia Thermometer 2
+
+​The Xiaomi Mijia Thermometer 2 (model LYWSD03MMC) is a compact and affordable sensor based on Telink TLSR8258 SoC, designed for monitoring environmental conditions. With it's default firmware, it uses Bluetooth Low Energy (BLE) connectivity to ensure low-energy wireless communication, suitable for continuous monitoring without significant battery drain.
 
 It can measures ambient temperatures ranging from 0°C to 60°C with a resolution of 0.1°C. It can also capture relative humidity levels between 0% and 99% RH with a resolution of 1% RH. It uses a CR2032 coin cell battery and provides battery voltage readings, allowing users to monitor the remaining charge of the battery. Last but not least, it features a LCD display that shows the current temperature and humidity readings, along with comfort level indicators.
 
 <img src="pics/LYWSD03MMC.jpg" alt="segment" width="200">
 
-The LYWSD03MMC is popular among DIY enthusiasts and smart home users due to its affordability and adaptability. It can be integrated into systems like Home Assistant, Node-RED, or custom InfluxDB setups for real-time monitoring and automation. With custom firmware, it can also be configured to use protocols like BTHome, enhancing compatibility with various platforms.
+The availability of hackable firmware provides greater flexibility and control over data formats and broadcast intervals, making them highly adaptable for scalable, battery-efficient environmental monitoring projects. By leveraging BLE and flashing custom firmware, these sensors can passively broadcast temperature and humidity data without requiring active polling, minimizing battery drain and network overhead.
+
+Their compatibility with popular Python libraries like bleak and bluepy makes integration with the Raspberry Pi 5 straightforward. The LYWSD03MMC is popular among DIY enthusiasts and smart home users. It can be integrated into systems like Home Assistant, Node-RED, or custom InfluxDB setups for real-time monitoring, automation and visualization. Custom [firmware](https://smarthomescene.com/guides/convert-xiaomi-lywsd03mmc-from-bluetooth-to-zigbee/) is also available that can convert the LYWSD03MMC from Bluetooth to Zigbee.
+
+## Getting Started
 
 ### Bluetooth Status
 
@@ -42,11 +61,13 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Use the `ble_scan.py` Python script to scans for nearby BLE devices every 2 seconds:
+Use the `ble_scan.py` Python script to scan for nearby BLE devices every 2 seconds:
 
 ```bash
 python3 ble_scan.py
 ```
+
+Here is a sample output:
 
 ```text
 +-------------------+----------------------------------------+------------------------------+------------+--------------+-------------+--------+--------+---------+---------+---------------+-----------+
@@ -62,7 +83,7 @@ python3 ble_scan.py
 +-------------------+----------------------------------------+------------------------------+------------+--------------+-------------+--------+--------+---------+---------+---------------+-----------+
 ```
 
-The discovered devices are presented in a table, sorted by their signal strength (RSSI) — meaning that closer devices appear at the top of the list. A higher (less negative) RSSI value generally indicates a stronger signal and thus a closer device. For each discovered device, additional metadata is retrieved and displayed in a table. You can find a brief description of each metadata in the table below:
+The discovered devices are presented in a table, sorted by their signal strength (RSSI) — meaning that closer devices appear at the top of the list. A higher (less negative) RSSI value generally indicates a stronger signal and thus a closer device. For each discovered device, additional metadata is retrieved and displayed in the table. You can find a brief description of each metadata in the table below:
 
 | **Column**        | **Description**                                                                               |
 |-------------------|-----------------------------------------------------------------------------------------------|
@@ -274,11 +295,11 @@ Subscribed to notifications. Listening...
 
 We can write data to the  BLE device to control its settings. For example, `sensor_write.py` Python script shows how to change the temperature unit displayed by the device between Celsius (°C) and Fahrenheit (°F). It connects to the BLE device, writes the desired unit setting, and reads back the configured value.
 
-### BLE Key
+## BLE Key
 
 The BLE Key (sometimes called the Bind Key) is a security credential used to enable encrypted communication between a BLE device and an application, such as the Mi Home app or custom scripts. It becomes necessary once the device is paired and transitions to using authenticated BLE connections, protecting actions like secure firmware updates. The BLE Key is used in direct Bluetooth connections — for example, when a Raspberry Pi or mobile app communicates with the device over BLE. This key is generated during the initial pairing or binding process within the Xiaomi ecosystem, typically when adding the device through the Mi Home app.
 
-To obtain the BLE Key for a Xiaomi device, first install the `Xiaomi Home app` on your mobile device. Create an account using your email address and set a password. Once registered, add your BLE device to the app and complete the binding process. After successfully pairing the device, you can retrieve the BLE Key by using the open-source tool [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor). Follow the instructions in the repository to run the script.
+To obtain the BLE Key for a Xiaomi device, first install the `Xiaomi Home` app on your mobile device. Create an account using your email address and set a password. Once registered, add your BLE device to the app and complete the binding process. After successfully pairing the device, you can retrieve the BLE Key by using the open-source tool [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor). Follow the instructions in the repository to run the script.
 
 ```bash
 python3 token_extractor.py
@@ -298,13 +319,11 @@ MODEL:    miaomiaoce.sensor_ht.t2
 
 The python script securely connects to your Xiaomi account and extracts the `token` and `ble key` associated with your devices. The key is essential for enabling secure BLE communication outside of the Xiaomi ecosystem, such as when connecting via custom scripts or home automation platforms.
 
-The token is not relevant for Xiaomi Mijia Thermometer 2. It is a security credential used for authenticating API communications with Xiaomi devices that connect over Wi-Fi. It is required when sending API requests either to Xiaomi’s cloud services or directly to the device over the local network (LAN). The token ensures that only authorized clients can control or monitor the device remotely. The token must be included with each API call to establish trusted communication with the device.
-
-### Custom Firmware
+## ATC_MiThermometer Custom Firmware
 
 The default LYWSD03MMC firmware does not broadcast its readings in BLE advertisements. To access data, a direct Bluetooth connection is required. Once connected, the device transmits temperature, humidity, and voltage data approximately every 6 seconds. When you're connected to the device no other connections is accepted, meaning if you hold the connection no other applications can readout sensor data.
 
-The [ATC_MiThermometer](https://github.com/atc1441/ATC_MiThermometer) project provides custom firmware for Xiaomi LYWSD03MMC Bluetooth thermometers, enhancing their functionality for home automation and data logging applications. Flashing ATC_MiThermometer custom firmware enables the sensor to broadcast data in BLE advertisements, allowing for passive data collection without maintaining a continuous connection. This approach is more battery-efficient and facilitates integration with various home automation platforms.
+The [ATC_MiThermometer](https://github.com/atc1441/ATC_MiThermometer) project provides custom firmware for LYWSD03MMC, enhancing their functionality for home automation and data logging applications. Flashing ATC_MiThermometer custom firmware enables the sensor to broadcast data in BLE advertisements, allowing for passive data collection without maintaining a continuous connection. This approach is more battery-efficient and facilitates integration with various home automation platforms.
 
 The custom firmware sends sensor data every minute using the standard Environmental Sensing UUID (`0x181A`), but the data structure inside the advertisement packet follows a custom format defined below:
 
@@ -317,13 +336,40 @@ The custom firmware sends sensor data every minute using the standard Environmen
 | 10–11                | Battery voltage (in mV, big-endian)     | uint16      |
 | 12                   | Frame packet counter                    | uint8       |
 
-The temperature value is an `int16` and must be divided by 10 to get the actual temperature in °C. The MAC address is sent in correct, human-readable order (not reversed). Furthermore, the frame counter increments with each advertisement, which helps detect missed transmissions. This custom format allows easy parsing without needing encryption keys or active connections.
+The temperature value is an `int16` and must be divided by 10 to get the actual temperature. The MAC address is sent in correct, human-readable order (not reversed). Furthermore, the frame counter increments with each advertisement, which helps detect missed transmissions. This custom format allows easy parsing without needing encryption keys or active connections.
 
-The user has the option to customize many different aspects of the custom firmware including:
+### Flashing Custom Firmware
+
+There are two primary methods to flash the ATC_MiThermometer custom firmware onto the LYWSD03MMC device:
+
+- Over-the-Air (OTA):
+
+    - Obtain device id, token, and BLE key using [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor) described [here](#ble-key).
+    - Open the [TelinkFlasher](https://atc1441.github.io/TelinkFlasher.html) in a browser such as Chrome.
+    - Enable experimental web platform features in your browser (ex. chrome://flags/#enable-experimental-web-platform-features)
+    - Click on "Connect" to connect to the Xiaomi thermometer; note that discovery may take some time due to the device's low advertising frequency.
+    - Copy and paste device id, token, and BLE key in the form.
+    - Click on "Do via Login" to authorize the connection.
+    - Download the [ATC_Exploit.bin](https://github.com/atc1441/ATC_MiThermometer/blob/master/ATC_Exploit.bin) file.
+    - Select the firmware file and initiate the flashing process.​
+
+- USB to UART (Serial):
+
+  For devices that cannot be flashed OTA, the firmware can be uploaded via a USB to UART adapter.
+
+  Refer to the custom firmware repository for detailed instruction.
+
+Once the custom firmware has been successfully flashed to the BLE device, you can reconnect to it using the same web portal. The device will advertise a new name based on its MAC address, prefixed with "ATC" (e.g., `ATC_AAEA0D`). Additionally, the web portal will display a log message such as "Detected custom Firmware," confirming that the custom firmware has been properly loaded onto the device.
+
+### Custom Firmware Configuration
+
+The ATC_MiThermometer custom firmware allows real-time configuration changes directly from the TelinkFlasher web portal, which are immediately written to the device without requiring a firmware re-flashing. You can configure the following:
 
 - Advertising Type: Select how data is advertised over BLE. Custom format (default) or Mi-Like format (compatible with Xiaomi apps).
 
-- Advertising Measurement Interval: Set how often updated sensor values are broadcasted over BLE (default is every 60 seconds).
+- Advertising Interval: Set how often updated sensor values are broadcasted over BLE (default is 60 seconds).
+
+- Temperature Unit Selection: Choose between °C (Celsius) and °F (Fahrenheit) for display. Default is Celsius.
 
 - Temperature and Humidity Offset Calibration: Apply manual offsets to temperature (±12.8 °C) and humidity (±50%) readings for calibration purposes.
 
@@ -332,34 +378,15 @@ The user has the option to customize many different aspects of the custom firmwa
     - Temperature alarm: configurable from 0.1 °C to 25.5 °C (default: 0.5 °C)
     - Humidity alarm: configurable from 1% to 50% (default: 5%)
 
-- Temperature Unit Selection: Choose between °C (Celsius) and °F (Fahrenheit) for display. Default is Celsius.
-
 - Battery Level Display: Show either battery percentage or humidity percentage alternately every ~5–6 seconds.
 
 - Smiley Face Display Behavior: Control the smiley icon shown on the screen.
-
-### Flashing Custom Firmware
-
-There are two primary methods to flash the custom firmware onto the LYWSD03MMC device:
-
-- Over-the-Air (OTA): Utilizing the [TelinkFlasher](https://atc1441.github.io/TelinkFlasher.html) web tool to flash the firmware directly through a web browser.
-
-    - Open the TelinkFlasher in a browser such as Chrome (use your mobile phone for better results).
-    - Click on "Connect" to connect to the Xiaomi thermometer; note that discovery may take some time due to the device's low advertising frequency.
-    - Obtain device id, token, and BLE key using [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor) described previously. Copy and paste these three values in the form.
-    - Click on "Do via Login" to authorize the connection.
-    - Download the [ATC_Exploit.bin](https://github.com/atc1441/ATC_MiThermometer/blob/master/ATC_Exploit.bin) file.
-    - Select the firmware file and initiate the flashing process.​
-
-- USB to UART (Serial) Flashing: For devices that cannot be flashed OTA, the firmware can be uploaded via a USB to UART adapter. Refer to the custom firmware repository for detailed instruction.
-
-Once the custom firmware has been successfully flashed to the BLE device, you can reconnect to it using the same TelinkFlasher web portal. The device will advertise a new name based on its MAC address, prefixed with "ATC" (e.g., `ATC_AAEA0D`). Additionally, the web portal will display a log message such as "Detected custom Firmware," confirming that the custom firmware has been properly loaded onto the device. The firmware allows real-time configuration changes directly from the portal, which are immediately written to the device. For example, you can adjust the displayed or advertised temperature units (°C or °F), enable or disable the smiley face indicator, and modify other sensor display settings without requiring a firmware re-flashing.
 
 ### BLE Passive Data Collection
 
 Installing the custom firmware on the LYWSD03MMC enables passive data collection by broadcasting sensor readings over BLE advertisements without requiring an active connection. This reduces power consumption and simplifies data retrieval, as devices can simply listen for advertisement packets to collect temperature, humidity, battery level, and voltage information. The data is broadcast using the Environmental Sensing UUID (0x181A) in a custom format, allowing for easy decoding.
 
-Furthermore, since no BLE connection or pairing is necessary, multiple sensors can be monitored simultaneously with minimal system resources, making this method ideal for scalable, low-power sensor networks and continuous home environment monitoring. The `sensor_collector.py` script passively listens for BLE advertisement packets from the sensor, decodes the broadcasted data fields, and displays the parsed measurements.
+Furthermore, since no BLE connection or pairing is necessary, multiple sensors can be monitored simultaneously with minimal system resources, making this method ideal for scalable, low-power sensor networks and continuous home environment monitoring. The `sensor_collector.py` script passively listens for BLE advertisement packets from different sensors, decodes the broadcasted data fields, and displays the parsed measurements.
 
 ```bash
 python3 sensor_collector.py
@@ -380,16 +407,16 @@ python3 sensor_collector.py
       mac_address: A4:C1:38:AA:EA:0D
 ```
 
-When you have multiple LYWSD03MMC devices sending passive BLE advertisements (typically once per minute, containing temperature, humidity, and battery data), the overall goal is to:
+When you have multiple sensor devices sending BLE advertisements, the overall goal is to:
 
 - Centralize the incoming data
 - Store it for future use
 - Visualize it (graphs, dashboards)
 - Act upon it (alerts, automation)
 
-Depending on the number of devices and physical deployment area, you need to carefully plan your collector architecture.
+Depending on the number of devices and physical deployment area, you need to carefully plan your collector architecture: single vs multiple collector setup.
 
-### Single Collector Setup
+## Single Collector Setup
 
 A single collector architecture for BLE sensor data collection is suitable for small-scale environments such as home labs or personal IoT setups. This model works best when you have 1 to 20 BLE sensors located reasonably close to the collector, typically within 10 to 15 meters. Actual distance may vary depending on environmental factors like walls, doors, or other physical obstacles, which can significantly impact BLE signal strength and reliability.
 
@@ -409,14 +436,59 @@ Single collector setup has several advantages. It is simple to set up and easy t
 
 Multiple challenges are associated with single collector setup. First and foremost, BLE signal range indoors is relatively short — typically 10 to 20 meters — and can be reduced further by physical barriers. This means that careful placement of the collector is critical to maintain reliable coverage. Another risk is that if the collector fails or goes offline, all data collection immediately stops, creating a single point of failure. Lastly, while a single collector can comfortably handle up to 20–30 devices in most cases, scaling beyond that may cause performance issues due to limitations in BLE scanning rates and advertisement collision handling. Careful testing and performance tuning would be necessary if you plan to grow the number of connected sensors.
 
-### Multiple Collector Setup
+## Multiple Collector Setup
 
+In medium to large environments — such as large homes, office buildings, university labs, or industrial spaces — a single BLE collector is often not enough to ensure reliable data collection. As the number of BLE sensors exceeds 20 devices and the physical layout becomes more spread out (multiple floors, long corridors, separate rooms or buildings), a multiple collectors setup becomes necessary. This architecture ensures that all sensors remain within effective BLE range of at least one collector, enabling robust and continuous data gathering across a large or complex area.
 
+In this design, several collectors — typically Raspberry Pi nodes, small PCs, or embedded servers — are strategically deployed throughout the environment. Each collector listens for BLE advertisements within its local area, independently picking up broadcasts from nearby sensors. Rather than processing everything locally, collectors forward the collected data upstream to a central server, broker, or database for storage, visualization, and higher-level analytics. This approach centralizes the data management while distributing the BLE listening load across the network.
 
+<img src="pics/multi-node.png" alt="segment" width="400">
 
+#### Advantages
 
+The advantages of a multiple collector setup are significant. First, it dramatically improves BLE coverage, overcoming the 10–20 meter indoor range limitation of Bluetooth. Sensors placed farther apart or behind multiple walls can still reliably transmit their data. Second, the system gains redundancy — if one collector fails, others can continue operating, minimizing data loss. Additionally, load balancing becomes more effective: instead of one node struggling to handle dozens of devices, each collector only manages a smaller subset of nearby sensors, improving responsiveness and reducing dropped packets.
 
+#### Challenges
 
+Multiple collector setup introduces new challenges that must be carefully managed.
+
+- Clock synchronization
+
+    If collectors are operating independently, their timestamps must be tightly aligned to ensure that events across the network are correctly ordered. Using NTP (Network Time Protocol) to synchronize all collectors to a common time source is critical for maintaining accurate, meaningful historical data.
+
+- Duplicate data
+
+    When multiple collectors are within range of the same sensor, they may receive and forward the same advertisement. Without proper `deduplication` logic at the server side you risk storing identical readings multiple times, polluting your database and inflating storage costs. More on deduplication strategies later.
+
+- Data routing strategies
+
+    Should each collector immediately forward every incoming packet to the central server, or should it batch readings together and send them periodically? Immediate forwarding enables near real-time monitoring but can flood the network with small packets. Batching reduces network traffic but introduces slight delays. Moreover, the design must account for failures of the central server: collectors should implement temporary buffering or retry mechanisms so that no data is lost if the upstream destination is temporarily unreachable.
+
+- Network traffic optimization
+
+    Forwarding every raw BLE packet creates overhead, especially as sensor density increases. Implementing some form of edge processing — for example, filtering, deduplication, or simple aggregation at the collector before sending data upstream — can significantly reduce bandwidth usage while preserving data integrity.
+
+#### Deduplication Strategies
+
+In multi-collector BLE setups, deduplication ensures that identical sensor readings captured by multiple collectors are stored only once. Collectors act as lightweight forwarders, simply relaying all received BLE data to a central server or database. The server then takes full responsibility for identifying and filtering out duplicates. Let us go over some of these techniques.
+
+- By MAC Address + Timestamp
+
+    One of the simplest and most effective deduplication strategies is based on matching the MAC address and timestamp of incoming sensor data. BLE advertisements often contain the latest battery, temperature, and humidity readings, broadcasted periodically. If two or more collectors capture the same broadcast, they will report identical data — same MAC address and same moment in time. By comparing incoming records at the server side, any readings that have the same MAC and timestamp (or even identical sensor values) can be identified as duplicates. One copy is kept and the others are discarded. This method is straightforward, efficient, and relies only on data that is already naturally available in the BLE payloads.
+
+- Use Hashing
+
+    Another strategy is to compute a hash based on key fields of each received advertisement, such as MAC address, temperature, humidity, battery level, and timestamp. By combining these fields into a unique string and calculating a simple hash (e.g., using SHA-256 or a lightweight checksum), you can quickly compare hashes of incoming data. If two records produce the same hash, they are assumed to be duplicates, and only one is retained. Hashing provides a flexible and scalable way to detect duplicates without comparing fields individually, making it particularly useful when dealing with large volumes of data or when records need to be processed at high speed.
+
+## Home Network Deployment
+
+In my home network deployment, I am adopting the single collector setup approach. A dedicated Raspberry Pi node (`Ares`) acts as the central BLE data collector, passively listening for advertisements from all nearby LYWSD03MMC sensors. I currently have seven BLE sensors placed strategically throughout the house, including one located outside to monitor outdoor temperature and humidity conditions. Instead of storing the collected data locally, we forward the decoded data to an external InfluxDB database hosted on a different Raspberry Pi node (`Zeus`), within my cluster.
+
+<img src="pics/home_design.png" alt="segment" width="450">
+
+This design separates the collection and storage responsibilities, ensuring that the collector remains lightweight and focused solely on BLE scanning and decoding, while Zeus handles storage, querying, and visualization workloads. The setup provides a simple, efficient, and scalable architecture that fits the needs of my home lab environment while following good distributed system practices.
+
+The implementation is provided in the `sensor_collect_forward.py` script. It builds upon the functionality of `sensor_collector.py`, but instead of printing the decoded sensor values to stdout, it forwards the data to a remote InfluxDB time-series database. The measurement is named `ble_sensor`, and metadata such as the collector's hostname, username, sensor name, sensor location, and sensor MAC address are included as `tags` to support efficient indexing and querying.
 
 -----------------------
 
