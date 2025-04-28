@@ -532,7 +532,7 @@ This design separates the collection and storage responsibilities, ensuring that
 
 The implementation is provided in the `sensor_collect_forward.py` script. It builds upon the functionality of `sensor_collector.py`, but instead of printing the decoded sensor values to stdout, it forwards the data to a remote InfluxDB time-series database. The measurement is named `ble_sensor`, and metadata such as the collector's hostname, username, sensor name, sensor location, and sensor MAC address are included as `tags` to support efficient indexing and querying.
 
-To ensure clean and efficient data storage, a deduplication strategy is implemented. Each received (MAC address, frame counter) pair is stored as a key in a Redis in-memory database with an automatic expiration of 30 minutes. If the same key is encountered again, the data is identified as a duplicate and skipped. This approach provides fast, scalable, and persistent deduplication even across collector restarts. This ensures that only unique sensor readings are forwarded to the InfluxDB database.
+To ensure clean and efficient data storage, a deduplication strategy is implemented. Each received (MAC address, frame counter) pair is stored as a key in a Redis in-memory database with an automatic expiration of 2 minutes. If the same key is encountered again, the data is identified as a duplicate and skipped. This approach provides fast, scalable, and persistent deduplication even across collector restarts. This ensures that only unique sensor readings are forwarded to the InfluxDB database.
 
 Start a container running Redis:
 
@@ -543,13 +543,12 @@ docker compose up -d
 Start the main Python script:
 
 ```bash
-docker compose up -d
 python3 sensor_collect_forward.py
 ```
 
 Here is a sample visualization in Grafana:
 
-<img src="pics/home_sensors.png" alt="segment" width="450">
+<img src="pics/home_sensors.jpg" alt="segment" width="600">
 
 ### Run as a systemd Service
 

@@ -26,7 +26,7 @@ def handle_sensor_data(data):
     forward_influxdb(data)
 
 
-def is_duplicate(data, ttl_seconds=30*60):
+def is_duplicate(data, ttl_seconds=2*60):
     """
         Checks if (MAC, Frame Counter) combo has already been seen using Redis.
     """
