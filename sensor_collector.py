@@ -18,6 +18,11 @@ sensors_list = [
         "name": "sensor2",
         "location": "outside",
         "mac_address": "A4:C1:38:67:54:2B"
+    },
+    {
+        "name": "sensor3",
+        "location": "living-room",
+        "mac_address": "A4:C1:38:BD:25:BC"
     }
 ]
 
@@ -58,8 +63,6 @@ def parse_custom_payload(data, advertisement_data):
 
         rssi = advertisement_data.rssi
         distance = estimate_distance(rssi)
-        if distance:
-            distance = round(distance, 2)
 
         measured_interval = 0
         last_frame_data = frame_count_dict.get(mac, None)
@@ -84,13 +87,13 @@ def parse_custom_payload(data, advertisement_data):
         entry = {
             "timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"),
             "temperature": round(temp, 2), # C or F depending on firmware config
-            "humidity": humidity,     # percent
-            "battery_level": battery, # percent
+            "humidity": int(humidity),     # percent
+            "battery_level": float(battery), # percent
             "battery_voltage": round(voltage, 3), # volt
-            "frame_counter": frame_counter,
-            "rssi": rssi,
-            "distance": distance, # meter
-            "measurement_interval": round(measured_interval, 2) # second
+            "frame_counter": int(frame_counter),
+            "rssi": int(rssi),
+            "distance": round(distance, 2) or 0.0, # meter
+            "measurement_interval": round(float(measured_interval), 2) # second
         }
 
         sensor_entry = sensors_dict.get(mac, {})
