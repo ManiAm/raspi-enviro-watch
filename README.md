@@ -84,7 +84,7 @@ Here is a sample output:
 +-------------------+----------------------------------------+------------------------------+------------+--------------+-------------+--------+--------+---------+---------+---------------+-----------+
 ```
 
-The discovered devices are presented in a table, sorted by their signal strength (RSSI) — meaning that closer devices appear at the top of the list. A higher (less negative) RSSI value generally indicates a stronger signal and thus a closer device. For each discovered device, additional metadata is retrieved and displayed in the table. You can find a brief description of each metadata in the table below:
+The discovered devices are presented in a table, sorted by their signal strength (RSSI) - meaning that closer devices appear at the top of the list. A higher (less negative) RSSI value generally indicates a stronger signal and thus a closer device. For each discovered device, additional metadata is retrieved and displayed in the table. You can find a brief description of each metadata in the table below:
 
 | **Column**        | **Description**                                                                               |
 |-------------------|-----------------------------------------------------------------------------------------------|
@@ -110,11 +110,11 @@ When the thermometer is turned on, it begins broadcasting BLE advertisements. Du
 | A4:C1:38:AA:EA:0D | Telink Semiconductor (Taipei) Co. Ltd. |          LYWSD03MMC          |    -65     |     2.01     |   public    | False  | False  |  False  |  False  |     False     |   False   |
 ```
 
-The default firmware of the device advertises its presence via BLE; however, it does not broadcast actual sensor data (temperature, humidity, battery level) in the advertisement packets. To access the thermometer's readings, you must establish a BLE connection first — then perform a GATT read to retrieve the data.
+The default firmware of the device advertises its presence via BLE; however, it does not broadcast actual sensor data (temperature, humidity, battery level) in the advertisement packets. To access the thermometer's readings, you must establish a BLE connection first - then perform a GATT read to retrieve the data.
 
 ### GATT (Generic ATTribute Profile)
 
-A GATT profile is a standardized framework that defines how a BLE device organizes its data and operations for communication. Within a GATT profile, the data is grouped into `services`, each representing a specific function or feature of the device (such as monitoring heart rate or battery level). Each service is made up of one or more `characteristics`, which are individual pieces of data or control points that can be interacted with. Every service and characteristic is identified by a globally unique `UUID` (Universally Unique Identifier), which ensures that devices can recognize and interpret them correctly across different manufacturers. In addition to the UUID, each element is also assigned a local `handle`, a numeric reference used internally by the BLE protocol for efficient access. Furthermore, every characteristic has associated `properties` that define how it can be used — for example, whether it can be read, written, or can notify the client when its value changes.
+A GATT profile is a standardized framework that defines how a BLE device organizes its data and operations for communication. Within a GATT profile, the data is grouped into `services`, each representing a specific function or feature of the device (such as monitoring heart rate or battery level). Each service is made up of one or more `characteristics`, which are individual pieces of data or control points that can be interacted with. Every service and characteristic is identified by a globally unique `UUID` (Universally Unique Identifier), which ensures that devices can recognize and interpret them correctly across different manufacturers. In addition to the UUID, each element is also assigned a local `handle`, a numeric reference used internally by the BLE protocol for efficient access. Furthermore, every characteristic has associated `properties` that define how it can be used - for example, whether it can be read, written, or can notify the client when its value changes.
 
 | Property              | Meaning                                                |
 |-----------------------|--------------------------------------------------------|
@@ -183,14 +183,14 @@ Services in BLE can be either `standard` or `vendor-specific`. Standard services
 
 | Service UUID                           | Service Type                | Description                                                                                              |
 |:---------------------------------------|:----------------------------|:---------------------------------------------------------------------------------------------------------|
-| `00001800-0000-1000-8000-00805f9b34fb` | Standard                    | **Generic Access (GAP)** — device name, appearance, and connection parameters.                           |
-| `00001801-0000-1000-8000-00805f9b34fb` | Standard                    | **Generic Attribute (GATT)** — service change notifications.                                             |
-| `0000180a-0000-1000-8000-00805f9b34fb` | Standard                    | **Device Information Service (DIS)** — model, serial, firmware, and manufacturer info.                   |
-| `00010203-0405-0607-0809-0a0b0c0d1912` | Vendor-Specific             | Custom service — no public standard, device-specific features.                                           |
-| `ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6` | Vendor-Specific             | Common in **Mijia/Xiaomi BLE** sensors — handles environmental data (temp/humidity).                     |
-| `fafafa00-fafa-fafa-fafa-fafafafafafa` | Vendor-Specific             | Placeholder-style custom service — used for custom application-specific data.                            |
-| `8edffff0-3d1b-9c37-4623-ad7265f14076` | Vendor-Specific             | Custom service — possibly for additional sensor data or special commands.                                |
-| `0000fe95-0000-1000-8000-00805f9b34fb` | Standard (Company Assigned) | **Xiaomi Inc. (assigned number)** — special service for Xiaomi BLE devices (e.g., binding, OTA updates). |
+| `00001800-0000-1000-8000-00805f9b34fb` | Standard                    | **Generic Access (GAP)** - device name, appearance, and connection parameters.                           |
+| `00001801-0000-1000-8000-00805f9b34fb` | Standard                    | **Generic Attribute (GATT)** - service change notifications.                                             |
+| `0000180a-0000-1000-8000-00805f9b34fb` | Standard                    | **Device Information Service (DIS)** - model, serial, firmware, and manufacturer info.                   |
+| `00010203-0405-0607-0809-0a0b0c0d1912` | Vendor-Specific             | Custom service - no public standard, device-specific features.                                           |
+| `ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6` | Vendor-Specific             | Common in **Mijia/Xiaomi BLE** sensors - handles environmental data (temp/humidity).                     |
+| `fafafa00-fafa-fafa-fafa-fafafafafafa` | Vendor-Specific             | Placeholder-style custom service - used for custom application-specific data.                            |
+| `8edffff0-3d1b-9c37-4623-ad7265f14076` | Vendor-Specific             | Custom service - possibly for additional sensor data or special commands.                                |
+| `0000fe95-0000-1000-8000-00805f9b34fb` | Standard (Company Assigned) | **Xiaomi Inc. (assigned number)** - special service for Xiaomi BLE devices (e.g., binding, OTA updates). |
 
 ### Reading BLE Device Characteristics
 
@@ -202,7 +202,7 @@ python3 sensor_read.py
 
 It does this in two phases:
 
-- **Phase 1** — Discover Readable Characteristics (using `bluepy`):
+- **Phase 1** - Discover Readable Characteristics (using `bluepy`):
 
     Connects to the BLE device using bluepy.
 
@@ -212,7 +212,7 @@ It does this in two phases:
 
     Disconnects from the device after collecting UUIDs.
 
-- **Phase 2** — Read and Decode Data (using `bleak`):
+- **Phase 2** - Read and Decode Data (using `bleak`):
 
     Asynchronously connects to the same BLE device using bleak.
 
@@ -266,11 +266,11 @@ time: 1970-01-01 09:08:57
 
 The standard BLE characteristic for reporting battery level on LYWSD03MMC is unreliable. It consistently shows 99–100% battery, regardless of the actual charge state, and sometimes briefly reports 10% when the battery is nearly depleted. However, by that point, the device typically shuts down before updating the reading.
 
-In practice, the sensor also transmits the raw battery voltage during normal measurements, which provides a more accurate basis for estimating battery health. [Testing](https://github.com/JsBergbau/MiTemperature2/issues/1#issuecomment-588156894) with an adjustable power supply showed that the sensor operates between 2.1V and 3.0V. When the voltage drops to around 2.1V, the low battery icon appears on the LCD, and the device reports a lower value. This change can take some time—sometimes over an hour—to reflect. Below 2.09V, the sensor turns off completely. Therefore, a more accurate battery percentage estimate is obtained by mapping voltages linearly from 3.1V (100%) to 2.1V (0%).
+In practice, the sensor also transmits the raw battery voltage during normal measurements, which provides a more accurate basis for estimating battery health. [Testing](https://github.com/JsBergbau/MiTemperature2/issues/1#issuecomment-588156894) with an adjustable power supply showed that the sensor operates between 2.1V and 3.0V. When the voltage drops to around 2.1V, the low battery icon appears on the LCD, and the device reports a lower value. This change can take some time - sometimes over an hour - to reflect. Below 2.09V, the sensor turns off completely. Therefore, a more accurate battery percentage estimate is obtained by mapping voltages linearly from 3.1V (100%) to 2.1V (0%).
 
 ### Using NOTIFY
 
-In BLE, a NOTIFY means the device can push updates to you automatically when its value changes — without you needing to poll (read) repeatedly. After subscribing, the device sends the values about every 6 seconds. The `sensor_notify.py` Python script connects to a BLE sensor using the bleak library, subscribes to **EBE0CCC1-7A0A-4B0C-8A1A-6FF2997DA3A6** which is the data characteristic for temperature, humidity, and voltage. It then listens for real-time incoming sensor values for 60 seconds and decodes and prints each value to the console.
+In BLE, a NOTIFY means the device can push updates to you automatically when its value changes - without you needing to poll (read) repeatedly. After subscribing, the device sends the values about every 6 seconds. The `sensor_notify.py` Python script connects to a BLE sensor using the bleak library, subscribes to **EBE0CCC1-7A0A-4B0C-8A1A-6FF2997DA3A6** which is the data characteristic for temperature, humidity, and voltage. It then listens for real-time incoming sensor values for 60 seconds and decodes and prints each value to the console.
 
 ```bash
 python3 sensor_notify.py
@@ -298,7 +298,7 @@ We can write data to the  BLE device to control its settings. For example, `sens
 
 ## BLE Key
 
-The BLE Key (sometimes called the Bind Key) is a security credential used to enable encrypted communication between a BLE device and an application, such as the Mi Home app or custom scripts. It becomes necessary once the device is paired and transitions to using authenticated BLE connections, protecting actions like secure firmware updates. The BLE Key is used in direct Bluetooth connections — for example, when a Raspberry Pi or mobile app communicates with the device over BLE. This key is generated during the initial pairing or binding process within the Xiaomi ecosystem, typically when adding the device through the Mi Home app.
+The BLE Key (sometimes called the Bind Key) is a security credential used to enable encrypted communication between a BLE device and an application, such as the Mi Home app or custom scripts. It becomes necessary once the device is paired and transitions to using authenticated BLE connections, protecting actions like secure firmware updates. The BLE Key is used in direct Bluetooth connections - for example, when a Raspberry Pi or mobile app communicates with the device over BLE. This key is generated during the initial pairing or binding process within the Xiaomi ecosystem, typically when adding the device through the Mi Home app.
 
 To obtain the BLE Key for a Xiaomi device, first install the `Xiaomi Home` app on your mobile device. Create an account using your email address and set a password. Once registered, add your BLE device to the app and complete the binding process. After successfully pairing the device, you can retrieve the BLE Key by using the open-source tool [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor). Follow the instructions in the repository to run the script.
 
@@ -322,14 +322,6 @@ BLE KEY:  591f8a6e4e6cf453188ae1eabf16c636
 MAC:      A4:C1:38:67:54:2B
 TOKEN:    6780ca57ec09f49aaeeb50d1
 MODEL:    miaomiaoce.sensor_ht.t2
----------
-NAME:     living room
-ID:       blt.2.1l6d30tf9o401
-BLE KEY:  99a58f079a21a0d887e402189ce7ffc8
-MAC:      A4:C1:38:BD:25:BC
-TOKEN:    b2f4707173aec208b9ade7cf
-MODEL:    miaomiaoce.sensor_ht.t2
----------
 ```
 
 The python script securely connects to your Xiaomi account and extracts the `token` and `ble key` associated with your devices. The key is essential for enabling secure BLE communication outside of the Xiaomi ecosystem, such as when connecting via custom scripts or home automation platforms.
@@ -442,7 +434,7 @@ Depending on the number of devices and physical deployment area, you need to car
 
 A single collector architecture for BLE sensor data collection is suitable for small-scale environments such as home labs or personal IoT setups. This model works best when you have 1 to 20 BLE sensors located reasonably close to the collector, typically within 10 to 15 meters. Actual distance may vary depending on environmental factors like walls, doors, or other physical obstacles, which can significantly impact BLE signal strength and reliability.
 
-In this architecture, a single device — such as a Raspberry Pi, mini-PC, or even a small server — acts as the collector. It continuously listens for passive BLE advertisements sent out by the sensors. Once the collector captures the sensor broadcasts, it has two primary options for handling the incoming data: storing it locally or forwarding it to external systems.
+In this architecture, a single device - such as a Raspberry Pi, mini-PC, or even a small server - acts as the collector. It continuously listens for passive BLE advertisements sent out by the sensors. Once the collector captures the sensor broadcasts, it has two primary options for handling the incoming data: storing it locally or forwarding it to external systems.
 
 Storing locally means that the collector saves the decoded sensor data on its own local storage, such as an `SD card`, `SSD`, or `hard drive`. This can be done using simple file formats like `CSV` or `JSON`, or more structured solutions like `SQLite` or `InfluxDB` databases running on the device itself. Local storage is especially useful for smaller environments where simplicity, data privacy, or offline operation is important. It allows historical analysis even without Internet connectivity and gives full control over the data. However, local storage requires you to manage disk space, handle backups, and potentially set up your own visualization tools like Grafana if you want dashboards.
 
@@ -460,7 +452,7 @@ Multiple challenges are associated with single collector setup:
 
 - Limited BLE Signal Range Indoors
 
-  BLE signals typically have a relatively short effective range indoors — usually between 10 to 20 meters. Environmental factors such as walls, floors, furniture, and even household appliances can further attenuate the signal, causing packet loss or degraded data quality. As a result, careful and strategic placement of the single collector is essential to ensure consistent and reliable sensor communication across the intended coverage area.
+  BLE signals typically have a relatively short effective range indoors - usually between 10 to 20 meters. Environmental factors such as walls, floors, furniture, and even household appliances can further attenuate the signal, causing packet loss or degraded data quality. As a result, careful and strategic placement of the single collector is essential to ensure consistent and reliable sensor communication across the intended coverage area.
 
 - Single Point of Failure
 
@@ -488,19 +480,19 @@ In single collector BLE setups, while the risk of duplicate data is lower compar
 
 - By MAC Address + Frame Counter (Custom Firmware Only)
 
-    When using custom firmware that embeds a frame counter into the BLE advertisement payload, a more precise deduplication method becomes available. In this case, each broadcasted packet includes an incrementing frame counter alongside the MAC address. By comparing both the MAC address and the frame counter, the collector can reliably determine whether two received records are duplicates. If the frame counter and MAC match, the data is identical, and one copy can be safely discarded. This method is highly reliable because the frame counter provides an explicit mechanism to track updates. However, it is only applicable if the BLE device firmware supports including a frame counter in its advertisements — it is not available with standard factory firmware on most commercial sensors.
+    When using custom firmware that embeds a frame counter into the BLE advertisement payload, a more precise deduplication method becomes available. In this case, each broadcasted packet includes an incrementing frame counter alongside the MAC address. By comparing both the MAC address and the frame counter, the collector can reliably determine whether two received records are duplicates. If the frame counter and MAC match, the data is identical, and one copy can be safely discarded. This method is highly reliable because the frame counter provides an explicit mechanism to track updates. However, it is only applicable if the BLE device firmware supports including a frame counter in its advertisements - it is not available with standard factory firmware on most commercial sensors.
 
 ### Multiple Collector Setup
 
-In medium to large environments — such as large homes, office buildings, university labs, or industrial spaces — a single BLE collector is not enough to ensure reliable data collection. As the number of BLE sensors exceeds 20 devices and the physical layout becomes more spread out (multiple floors, long corridors, separate rooms or buildings), a multiple collectors setup becomes necessary. This architecture ensures that all sensors remain within effective BLE range of at least one collector, enabling robust and continuous data gathering across a large or complex area.
+In medium to large environments - such as large homes, office buildings, university labs, or industrial spaces - a single BLE collector is not enough to ensure reliable data collection. As the number of BLE sensors exceeds 20 devices and the physical layout becomes more spread out (multiple floors, long corridors, separate rooms or buildings), a multiple collectors setup becomes necessary. This architecture ensures that all sensors remain within effective BLE range of at least one collector, enabling robust and continuous data gathering across a large or complex area.
 
-Several collectors — typically Raspberry Pi nodes, small PCs, or embedded servers — are strategically deployed throughout the environment. Each collector listens for BLE advertisements within its local area, independently picking up broadcasts from nearby sensors. Rather than processing everything locally, collectors forward the collected data upstream to a central server, broker, or database for storage, visualization, and higher-level analytics. This approach centralizes the data management while distributing the BLE listening load across the network.
+Several collectors - typically Raspberry Pi nodes, small PCs, or embedded servers - are strategically deployed throughout the environment. Each collector listens for BLE advertisements within its local area, independently picking up broadcasts from nearby sensors. Rather than processing everything locally, collectors forward the collected data upstream to a central server, broker, or database for storage, visualization, and higher-level analytics. This approach centralizes the data management while distributing the BLE listening load across the network.
 
 <img src="pics/multi-node.png" alt="segment" width="400">
 
 #### Advantages
 
-The advantages of a multiple collector setup are significant. First, it dramatically improves BLE coverage, overcoming the 10–20 meter indoor range limitation of Bluetooth. Sensors placed farther apart or behind multiple walls can still reliably transmit their data. Second, the system gains redundancy — if one collector fails, others can continue operating, minimizing data loss. Additionally, load balancing becomes more effective: instead of one node struggling to handle dozens of devices, each collector only manages a smaller subset of nearby sensors, improving responsiveness and reducing dropped packets.
+The advantages of a multiple collector setup are significant. First, it dramatically improves BLE coverage, overcoming the 10–20 meter indoor range limitation of Bluetooth. Sensors placed farther apart or behind multiple walls can still reliably transmit their data. Second, the system gains redundancy - if one collector fails, others can continue operating, minimizing data loss. Additionally, load balancing becomes more effective: instead of one node struggling to handle dozens of devices, each collector only manages a smaller subset of nearby sensors, improving responsiveness and reducing dropped packets.
 
 #### Challenges
 
@@ -520,11 +512,11 @@ Multiple collector setup introduces new challenges that must be carefully manage
 
 - Network Traffic Optimization
 
-    Forwarding every raw BLE packet creates overhead, especially as sensor density increases. Implementing some form of edge processing — for example, filtering, deduplication, or simple aggregation at the collector before sending data upstream — can significantly reduce bandwidth usage while preserving data integrity.
+    Forwarding every raw BLE packet creates overhead, especially as sensor density increases. Implementing some form of edge processing - for example, filtering, deduplication, or simple aggregation at the collector before sending data upstream - can significantly reduce bandwidth usage while preserving data integrity.
 
 ## Home Network Deployment
 
-In my home network, I am adopting the single collector setup approach. A dedicated Raspberry Pi node (`Ares`) acts as the central BLE data collector, passively listening for advertisements from all nearby LYWSD03MMC sensors. I currently have seven BLE sensors placed throughout the house, including one located outside to monitor outdoor temperature and humidity conditions. Instead of storing the collected data locally, I forward the decoded data to an external InfluxDB database hosted on a different Raspberry Pi node (`Zeus`), within my cluster.
+In my home network, I am adopting the single collector setup approach. A dedicated Raspberry Pi node (`Ares`) acts as the central BLE data collector, passively listening for advertisements from all nearby LYWSD03MMC sensors. I currently have eight BLE sensors placed throughout the house, including one located outside to monitor outdoor temperature and humidity conditions. Instead of storing the collected data locally, I forward the decoded data to an external InfluxDB database hosted on a different Raspberry Pi node (`Zeus`), within my cluster.
 
 <img src="pics/home_design.png" alt="segment" width="450">
 
@@ -549,6 +541,11 @@ python3 sensor_collect_forward.py
 Here is a sample visualization in Grafana:
 
 <img src="pics/home_sensors.jpg" alt="segment" width="600">
+
+One particularly insightful observation involves monitoring bathroom humidity levels. The data reveals how effective the exhaust fan is at removing moisture after a shower, providing a measure of ventilation performance and air quality improvement.
+
+<img src="pics/home_humidity.jpg" alt="segment" width="600">
+
 
 ### Run as a systemd Service
 

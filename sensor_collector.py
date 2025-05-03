@@ -23,6 +23,32 @@ sensors_list = [
         "name": "sensor3",
         "location": "living-room",
         "mac_address": "A4:C1:38:BD:25:BC"
+    },
+    {
+        "name": "sensor4",
+        "location": "daniel-room",
+        "mac_address": "A4:C1:38:06:EB:5B"
+    },
+
+    {
+        "name": "sensor5",
+        "location": "master-bathroom",
+        "mac_address": "A4:C1:38:45:95:6A"
+    },
+    {
+        "name": "sensor6",
+        "location": "daniel-bathroom",
+        "mac_address": "A4:C1:38:20:51:B0"
+    },
+    {
+        "name": "sensor7",
+        "location": "kitchen",
+        "mac_address": "A4:C1:38:61:25:39"
+    },
+    {
+        "name": "sensor8",
+        "location": "entrance",
+        "mac_address": "A4:C1:38:FB:94:3C"
     }
 ]
 
