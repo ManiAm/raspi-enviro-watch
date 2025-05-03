@@ -322,14 +322,6 @@ BLE KEY:  591f8a6e4e6cf453188ae1eabf16c636
 MAC:      A4:C1:38:67:54:2B
 TOKEN:    6780ca57ec09f49aaeeb50d1
 MODEL:    miaomiaoce.sensor_ht.t2
----------
-NAME:     living room
-ID:       blt.2.1l6d30tf9o401
-BLE KEY:  99a58f079a21a0d887e402189ce7ffc8
-MAC:      A4:C1:38:BD:25:BC
-TOKEN:    b2f4707173aec208b9ade7cf
-MODEL:    miaomiaoce.sensor_ht.t2
----------
 ```
 
 The python script securely connects to your Xiaomi account and extracts the `token` and `ble key` associated with your devices. The key is essential for enabling secure BLE communication outside of the Xiaomi ecosystem, such as when connecting via custom scripts or home automation platforms.
@@ -524,7 +516,7 @@ Multiple collector setup introduces new challenges that must be carefully manage
 
 ## Home Network Deployment
 
-In my home network, I am adopting the single collector setup approach. A dedicated Raspberry Pi node (`Ares`) acts as the central BLE data collector, passively listening for advertisements from all nearby LYWSD03MMC sensors. I currently have seven BLE sensors placed throughout the house, including one located outside to monitor outdoor temperature and humidity conditions. Instead of storing the collected data locally, I forward the decoded data to an external InfluxDB database hosted on a different Raspberry Pi node (`Zeus`), within my cluster.
+In my home network, I am adopting the single collector setup approach. A dedicated Raspberry Pi node (`Ares`) acts as the central BLE data collector, passively listening for advertisements from all nearby LYWSD03MMC sensors. I currently have eight BLE sensors placed throughout the house, including one located outside to monitor outdoor temperature and humidity conditions. Instead of storing the collected data locally, I forward the decoded data to an external InfluxDB database hosted on a different Raspberry Pi node (`Zeus`), within my cluster.
 
 <img src="pics/home_design.png" alt="segment" width="450">
 
@@ -549,6 +541,11 @@ python3 sensor_collect_forward.py
 Here is a sample visualization in Grafana:
 
 <img src="pics/home_sensors.jpg" alt="segment" width="600">
+
+One particularly insightful observation involves monitoring bathroom humidity levels. The data reveals how effective the exhaust fan is at removing moisture after a shower, providing a measure of ventilation performance and air quality improvement.
+
+<img src="pics/home_humidity.jpg" alt="segment" width="600">
+
 
 ### Run as a systemd Service
 
