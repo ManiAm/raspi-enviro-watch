@@ -57,8 +57,10 @@ bluetoothctl show | grep Powered
 Set up a Python virtual environment and install the required dependencies listed in requirements.txt:
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+sudo apt install -y build-essential libglib2.0-dev
+cd ~
+python3 -m venv enviroWatch
+source enviroWatch/bin/activate
 pip install -r requirements.txt
 ```
 
